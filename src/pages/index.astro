@@ -1,0 +1,37 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Switch from '../components/Switch.astro';
+import Source from '../components/Source.astro';
+
+import vueCode from '../components/SimpleCounter.vue?raw';
+import SimpleCounterVue from '../components/SimpleCounter.vue';
+
+import svelteCode from '../components/SimpleCounter.svelte?raw';
+import SimpleCounterSvelte from '../components/SimpleCounter.svelte';
+
+import reactCode from '../components/SimpleCounter?raw';
+import SimpleCounterReact from '../components/SimpleCounter';
+
+import DomLogger from '../components/DomLogger.astro';
+---
+
+<Layout title="Welcome to Astro.">
+  <Switch slots={[
+    { id: 'vue', label: 'Vue.js' },
+    { id: 'svelte', label: 'Svelte' },
+    { id: 'react', label: 'React' },
+  ]}>
+    <Source code={vueCode} kind="vue" slot="vue">
+      <SimpleCounterVue client:visible />
+    </Source>
+
+    <Source code={svelteCode} kind="svelte" slot="svelte">
+      <SimpleCounterSvelte client:visible />
+    </Source>
+
+    <Source code={reactCode} kind="none" slot="react">
+      <SimpleCounterReact client:visible />
+    </Source>
+  </Switch>
+  <DomLogger class="component-logs" />
+</Layout>

@@ -1,0 +1,7 @@
+{
+  "scss.lint.unknownAtRules": "ignore",
+  "tailwindCSS.rootFontSize": 14,
+  "tailwindCSS.emmetCompletions": true,
+  "mdx.experimentalLanguageServer": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+}

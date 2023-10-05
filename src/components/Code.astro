@@ -1,0 +1,18 @@
+---
+import '../styles/highlight.scss';
+import { getHighlightHtml } from '../utils/highlight';
+
+interface Props {
+  code: string;
+  lang?: string;
+}
+
+const {
+  code = (await Astro.slots.render('default')).trim(),
+  lang
+} = Astro.props;
+
+const html = await getHighlightHtml(code, lang);
+---
+
+<Fragment set:html={html} />

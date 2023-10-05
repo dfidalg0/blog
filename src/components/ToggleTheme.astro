@@ -1,0 +1,75 @@
+---
+import IconMoon from './IconMoon.astro';
+import IconSun from './IconSun.astro';
+---
+
+<script is:inline>(() => { const e = localStorage.getItem("prefs.theme") || "dark", a = window.matchMedia("(prefers-color-scheme: dark)").matches; (!e || e === "auto" ? a : e === "dark") && document.documentElement.classList.add("dark") })();</script>
+
+<button class="light-dark">
+  <span class="slider">
+    <IconMoon class="dark" />
+    <IconSun  class="light" />
+  </span>
+</button>
+
+<script>
+import { toggleTheme } from '../utils/theme';
+
+const togglers = document.querySelectorAll<HTMLButtonElement>('.light-dark')!;
+
+togglers.forEach((t) => t.addEventListener('click', toggleTheme));
+</script>
+
+<style lang="scss">
+.light-dark {
+  @apply border-font;
+
+  cursor: pointer;
+  appearance: unset;
+  border: 1px solid;
+  border-radius: 100vw;
+  width: 46px;
+  height: 24px;
+  padding: 0 2px;
+  position: relative;
+  background: transparent;
+
+  display: inline-flex;
+  align-items: center;
+
+  --light-display: unset;
+  --dark-display: none;
+
+  :root.dark & {
+    --light-display: none;
+    --dark-display: unset;
+    --slider-tranform: translateX(100%);
+  }
+}
+
+.slider {
+  height: 20px;
+  width: 20px;
+  border-radius: 100%;
+  background: rgba(0, 0, 0, 20%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: all .15s;
+  transform: var(--slider-tranform);
+
+  & > svg {
+    @apply fill-font;
+  }
+
+  & > .dark {
+    display: var(--dark-display);
+  }
+
+  & > .light {
+    display: var(--light-display);
+  }
+}
+</style>

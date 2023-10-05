@@ -1,0 +1,33 @@
+---
+import Switch from './Switch.astro';
+import Code from './Code.astro';
+
+interface Props {
+  script?: string;
+  template?: string;
+  style?: string;
+}
+
+const { script, template, style } = Astro.props;
+
+const slots = [
+  {
+    id: 'script',
+    label: 'Script',
+  },
+  {
+    id: 'template',
+    label: 'Template',
+  },
+  {
+    id: 'style',
+    label: 'Style',
+  },
+];
+---
+
+<Switch slots={slots} noPadding>
+  {script && <Code slot={script && 'script'} code={script} lang="html" />}
+  {template && <Code slot={template && 'template'} code={template} lang="html" />}
+  {style && <Code slot={style && 'style'} code={style} lang="html" />}
+</Switch>

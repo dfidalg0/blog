@@ -1,0 +1,134 @@
+---
+import Code from './Code.astro';
+import SwitchSFCTags from './SwitchSFCTags.astro';
+
+interface Props {
+  code: string;
+  kind?: 'vue' | 'svelte' | 'none';
+}
+
+const { code, kind = 'none' } = Astro.props;
+
+let tags: null | {
+  script?: string;
+  template?: string;
+  style?: string;
+} = {};
+
+const scriptRe = /(?:^|\n)(<script[\s\S]+?<\/script>)/;
+const styleRe = /(?:^|\n)(<style[\s\S]+?<\/style>)/;
+const templateRe = /(?:^|\n)(<template[\s\S]+?<\/template>)/;
+
+if (kind === 'vue' || kind === 'svelte') {
+  tags.script = code.match(scriptRe)?.[1];
+  tags.style = code.match(styleRe)?.[1];
+}
+
+if (kind === 'vue') {
+  tags.template = code.match(templateRe)?.[1];
+}
+else if (kind === 'svelte') {
+  let template = code;
+
+  if (tags.script) {
+    template = template.replace(tags.script, '')
+  }
+
+  if (tags.style) {
+    template = template.replace(tags.style, '')
+  }
+
+  tags.template = template.trim();
+}
+
+if (!tags.script && !tags.template && !tags.style) {
+  tags = null;
+}
+---
+
+<div class="source-root">
+  <div class="content-wrapper">
+    <slot />
+    <button class="btn">Source</button>
+  </div>
+
+  <div class="code-wrapper">
+    <div class="code">{
+      tags ? <SwitchSFCTags {...tags} />: <Code code={code} lang="typescript" />
+    }</div>
+  </div>
+</div>
+
+<style lang="scss">
+.source-root {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
+.btn {
+  @apply
+    absolute
+    bottom-0
+    right-0
+    py-1 px-3
+    rounded-full
+    hover:bg-red-500
+    hover:text-white
+    dark:hover:bg-red-800;
+}
+
+.content-wrapper {
+  position: relative;
+}
+
+.code-wrapper {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-height: 0;
+  transition: max-height .3s ease-in-out;
+}
+
+.code {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  height: fit-content;
+  min-height: fit-content;
+}
+</style>
+
+<script>
+import { ModalController } from '../utils/modal-controller';
+
+function createCodeController(wrapper: HTMLDivElement) {
+  return new ModalController(wrapper, {
+    setDuration(duration) {
+      wrapper.style.transitionDuration = duration === null ? '' : `${duration}ms`;
+    },
+    open() {
+      const code = wrapper.querySelector(':scope > .code')!;
+
+      wrapper.style.maxHeight = code.clientHeight + 'px';
+    },
+    close() {
+      wrapper.style.maxHeight = '';
+    },
+    isOpen() {
+      return Boolean(wrapper.style.maxHeight);
+    }
+  });
+};
+
+document.querySelectorAll('.source-root').forEach((root) => {
+  const btn = root.querySelector(':scope > .content-wrapper > .btn')!;
+  const wrapper = root.querySelector<HTMLDivElement>(':scope > .code-wrapper')!;
+
+  const controller = createCodeController(wrapper);
+
+  btn.addEventListener('click', () => controller.toggle());
+});
+</script>

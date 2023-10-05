@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  @apply text-font;
+}
+
+:root {
+  font-size: 14px;
+
+  @media (max-width: 720px) {
+    font-size: 12px;
+  }
+
+  // light theme
+  & {
+    --t-background: 240, 240, 240;
+    --t-font: 15, 15, 15;
+  }
+
+  // dark theme
+  &.dark {
+    --t-background: 27, 32, 41;
+    --t-font: 190, 195, 206;
+  }
+}
+
+html {
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  @apply bg-background text-font;
+  scrollbar-gutter: stable;
+  margin: 0;
+}
+
+pre {
+  margin: 0;
+}
+
+::-webkit-scrollbar {
+  @apply md:w-2 md:h-2;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px rgba(var(--t-font), 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-font;
+}
+
+// Headings
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold relative;
+  }
+
+  h1 {
+    @apply text-5xl;
+  }
+
+  h2 {
+    @apply text-4xl;
+  }
+
+  h3 {
+    @apply text-3xl;
+  }
+
+  h4 {
+    @apply text-2xl;
+  }
+
+  h6 {
+    @apply text-xl;
+  }
+
+  a:not(.btn) {
+    &, & * {
+      @apply text-red-600 hover:text-red-900;
+    }
+  }
+
+  // Lists
+  ul, ol {
+    @apply list-outside marker:text-red-600 ml-4;
+  }
+
+  ul {
+    @apply list-disc;
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  // blockquotes
+  blockquote {
+    @apply px-5 py-1 relative bg-red-200 dark:bg-red-950;
+
+    &::before {
+      content: '';
+      @apply absolute top-0 left-0 bottom-0 bg-red-600 dark:bg-red-800 w-2;
+    }
+  }
+}

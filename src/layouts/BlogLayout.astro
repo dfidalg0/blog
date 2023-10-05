@@ -1,0 +1,110 @@
+---
+import Layout from './Layout.astro';
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { marked, Renderer } from 'marked';
+import '@/styles/md.scss';
+
+type CollectionData = CollectionEntry<'blog'>['data'];
+
+type Props = Parameters<typeof Layout>[0] & CollectionData & {
+  creationTime?: Date;
+};
+
+const {
+  title,
+  subtitle,
+  cover,
+  tags,
+  creationTime,
+  ...restProps
+} = Astro.props;
+
+const renderer = new Renderer();
+
+renderer.link = (href, title, text) => {
+  const attrs: Partial<Record<string, string | null>> = {
+    href,
+    title,
+    target: '_blank',
+    rel: 'noopener',
+  };
+
+  // local source
+  if (/^\.{0,2}\//.test(href)) {
+    attrs.target = null;
+    attrs.rel = null;
+  }
+
+  const attrStr = Object.entries(attrs)
+    .map(([key, value]) => {
+      if (value === '') return ` ${key}`;
+
+      if (!value) return;
+
+      return ` ${key}="${value}"`
+    })
+    .join('');
+
+  return `<a${attrStr}>${text}</a>`
+};
+
+renderer.paragraph = (text) => {
+  return text;
+}
+
+function parseMd(md: string) {
+  const hasMultiline = md.includes('\n\n');
+
+  md = marked(md, { renderer });
+
+  if (!hasMultiline) {
+    md = md.replace(/^<p>|<\/p>$/g, '');
+  }
+
+  return md;
+}
+---
+
+<Layout {title} {...restProps}>
+  <article class="flex flex-col items-center pt-6 w-full">
+    <div class="w-[680px] max-w-[90vw]">
+      <div class="blog-title">
+        <h1 class="mb-4">{title}</h1>
+      </div>
+      {subtitle &&
+        <div class="blog-subtitle">
+          <h2 class="text-xl text-opacity-50">{subtitle}</h2>
+        </div>
+      }
+      {tags.length
+        ? <div class="flex gap-3 mt-3 select-none">
+          {tags.map((tag) =>
+            <a
+              class="
+                btn
+                rounded-full
+                bg-zinc-300
+                text-xs
+                px-[0.65rem]
+                py-1
+                text-slate-800
+              "
+              href={`/tags/${tag}/1`}
+            >{tag}</a>
+          )}
+        </div>
+        : null
+      }
+      {cover && <div class="blog-cover mt-11">
+        <figure class="flex flex-col items-center gap-3">
+          <Image src={cover.img} alt={cover.alt ?? ''} />
+          {cover.caption && <figcaption set:html={parseMd(cover.caption)}></figcaption>}
+        </figure>
+      </div>}
+      <div class="mt-20 blog-post">
+        <slot />
+      </div>
+    </div>
+  </article>
+</Layout>

@@ -1,0 +1,37 @@
+---
+import type { GetStaticPaths, InferGetStaticPropsType } from "astro";
+import { getCollection } from 'astro:content';
+import BlogLayout from '../../layouts/BlogLayout.astro';
+import { getCreationTimes } from '@/utils/git';
+
+export const getStaticPaths = (async () => {
+  const blogEntries = await getCollection('blog');
+
+  const staticEntries = blogEntries
+    .filter((entry) => entry.data.prerender);
+
+  const gitPaths = staticEntries.map(({ id }) => `src/content/blog/${id}`);
+
+  const creationTimes = await getCreationTimes(gitPaths);
+
+  return staticEntries
+    .map((entry, ii) => ({
+      params: {
+        slug: entry.slug
+      },
+      props: {
+        entry,
+        creationTime: creationTimes[gitPaths[ii]!]
+      },
+    }));
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { entry, creationTime } = Astro.props;
+const { Content } = await entry.render();
+---
+
+<BlogLayout {...entry.data} {creationTime}>
+  <Content />
+</BlogLayout>

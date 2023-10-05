@@ -1,0 +1,17 @@
+---
+const { class: className, ...props } = Astro.props;
+---
+
+<div {...props} class:list={[className, 'logger']} />
+
+<style lang="scss">
+.logger {
+  @apply w-full h-48 bg-gray-200 dark:bg-slate-900 overflow-y-auto;
+
+  & > {
+    :global(.entry) {
+      @apply mx-5 py-3 text-lg border-font border-b font-mono;
+    }
+  }
+}
+</style>

@@ -1,0 +1,40 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import type { InferGetStaticPropsType } from 'astro';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const entries = await getCollection('blog');
+
+  const tags = new Set<string>(['none']);
+
+  for (const entry of entries) {
+    for (const tag of entry.data.tags) {
+      tags.add(tag);
+    }
+  }
+
+  // For every tag, return a paginate() result.
+  // Make sure that you pass `{params: {tag}}` to `paginate()`
+  // so that Astro knows which tag grouping the result is for.
+  return Array.from(tags).flatMap((tag) => {
+    const posts = entries.filter((entry) => {
+      if (tag === 'none') return !entry.data.tags.length;
+
+      return entry.data.tags.includes(tag);
+    });
+
+    return paginate(posts, {
+      params: { tag },
+      props: { tag },
+    });
+  });
+}) satisfies GetStaticPaths;
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+
+const { page, tag } = Astro.props;
+---
+
+{JSON.stringify(page)}
+{tag}

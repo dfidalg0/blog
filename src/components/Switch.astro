@@ -1,0 +1,173 @@
+---
+interface Props {
+  slots: Array<{
+    id: string;
+    label: string;
+  }>;
+  noPadding?: boolean;
+}
+
+const { noPadding = false } = Astro.props;
+
+const slots = Astro.props.slots.filter(({ id }) => Astro.slots.has(id));
+
+const slotsContents = await Promise.all(
+  slots.map((slot) =>
+    Astro.slots.render(slot.id).then((content) => [slot, content] as const)
+  )
+);
+---
+
+<div class="switch astro-switch" class:list={{ noPadding }}>
+  <div class="switch__selector">
+    {slots.map(({ id, label }) =>
+      <button class="switch__tab" data-id={id}>{label}</button>
+    )}
+  </div>
+  <div class="switch__slider">
+    {slotsContents.map(([{ id }, content]) =>
+      <div data-id={id} class="switch__item">
+        <Fragment set:html={content} />
+      </div>
+    )}
+  </div>
+</div>
+
+<style lang="scss">
+.switch {
+  @apply w-full h-full overflow-x-hidden;
+
+  $transition-duration: .15s;
+
+  --padding: .75rem 1rem;
+
+  &.noPadding {
+    --padding: none;
+  }
+
+  position: relative;
+
+  &__selector {
+    position: relative;
+
+    &::before {
+      $height: 2px;
+
+      content: '';
+      position: absolute;
+      background: red;
+      height: $height;
+      bottom: 0;
+      left: 0px;
+      transform: translateX(var(--slider-translate));
+      width: var(--slider-size);
+      z-index: 2;
+
+      transition: transform $transition-duration ease;
+    }
+  }
+
+  &__slider {
+    @apply max-w-full relative;
+
+    display: flex;
+    transition: transform $transition-duration ease;
+    transform: translateX(calc(var(--switch-transform, 0) * -100%));
+  }
+
+  &__tab {
+    @apply
+      cursor-pointer
+      relative
+      bg-transparent
+      px-[10px]
+      py-[8px]
+      min-w-[50px]
+      border-[unset]
+      text-black
+      dark:text-gray-300;
+  }
+
+  &__item {
+    @apply bg-gray-200 dark:bg-gray-900;
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    flex-shrink: 0;
+    padding: var(--padding);
+  }
+}
+</style>
+
+<script>
+import { ModalController } from '../utils/modal-controller';
+
+interface ModalState {
+  shouldOpen: boolean;
+  controller: ModalController;
+}
+
+document.querySelectorAll<HTMLDivElement>('.astro-switch').forEach((root) => {
+  const selector = root.querySelector<HTMLDivElement>(':scope > .switch__selector')!;
+  const slider = root.querySelector<HTMLDivElement>(':scope > .switch__slider')!;
+  const items = Array.from(slider.querySelectorAll<HTMLDivElement>(':scope > .switch__item'));
+
+  const options = items.map((el) => el.dataset.id);
+
+  const modalsMap = new WeakMap<HTMLDivElement, ModalState[]>();
+
+  requestAnimationFrame(() => {
+    for (const item of items) {
+      modalsMap.set(
+        item,
+        ModalController.findFrom(item).map((c) => ({
+          controller: c,
+          shouldOpen: c.isOpen(),
+        }))
+      );
+    }
+
+    setTab(options[0]!);
+  });
+
+  function setTab(id: string) {
+    const index = options.indexOf(id);
+
+    if (index === -1) return;
+
+    const prevIndex = Number(root.style.getPropertyValue('--switch-transform') || -1);
+
+    root.style.setProperty('--switch-transform', index.toString());
+
+    const tab = selector.querySelector<HTMLButtonElement>(
+      `:scope > .switch__tab[data-id="${id}"]`
+    )!;
+
+    selector.style.setProperty('--slider-translate', `${tab.offsetLeft}px`);
+    selector.style.setProperty('--slider-size', `${tab.clientWidth}px`);
+
+    const prevItem = items[prevIndex];
+    const currentItem = items[index]!;
+
+    for (const modal of modalsMap.get(prevItem!) ?? []) {
+      // if we are the ones closing the modal, we should reopen it when it shows
+      // up again
+      const isOpen = modal.shouldOpen = modal.controller.isOpen();
+
+      if (isOpen) modal.controller.close();
+    }
+
+    for (const modal of modalsMap.get(currentItem) ?? []) {
+      if (modal.shouldOpen) modal.controller.open();
+    }
+  }
+
+  const tabs = selector.querySelectorAll<HTMLButtonElement>(':scope > .switch__tab');
+
+  for (const tab of tabs) {
+    tab.addEventListener('click', () => setTab(tab.dataset.id!));
+  }
+});
+</script>
