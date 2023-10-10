@@ -1,0 +1,46 @@
+---
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+
+import Code from "@/components/Code.astro";
+import IconGithub from "@/components/IconGithub.astro";
+
+import { generateGithubLink } from '@/utils/github';
+
+const __filenme = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filenme);
+
+const ROOT = path.resolve(__dirname, "../..");
+
+interface Props {
+  file: string;
+}
+
+const { file } = Astro.props;
+
+const fullPath = path.resolve(ROOT, file);
+const githubUrl = generateGithubLink(file);
+
+const lang = path.extname(file).slice(1);
+const code = await readFile(fullPath, "utf-8");
+---
+
+<div class="relative">
+  <Code {lang} {code} />
+    <a
+      title="View on Github"
+      class="
+        flex gap-2 text-font
+        hover:text-zinc-600
+        dark:hover:text-white
+        absolute
+        right-4 bottom-4
+      "
+      href={githubUrl}
+      target="_blank"
+      rel="noopener"
+    >
+      <IconGithub size="17px" />
+    </a>
+</div>

@@ -8,6 +8,7 @@ import '@/styles/md.scss';
 type CollectionData = CollectionEntry<'blog'>['data'];
 
 type Props = Parameters<typeof Layout>[0] & CollectionData & {
+  id: string;
   creationTime?: Date;
 };
 
@@ -20,6 +21,17 @@ const {
   ...restProps
 } = Astro.props;
 
+const formattedDate = Intl.DateTimeFormat('en', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+}).format(creationTime);
+
+const fullDate = Intl.DateTimeFormat('en', {
+  dateStyle: 'full',
+  timeStyle: 'full',
+}).format(creationTime);
+
 const renderer = new Renderer();
 
 renderer.link = (href, title, text) => {
@@ -31,7 +43,7 @@ renderer.link = (href, title, text) => {
   };
 
   // local source
-  if (/^\.{0,2}\//.test(href)) {
+  if (!/^https?:\/\//.test(href)) {
     attrs.target = null;
     attrs.rel = null;
   }
@@ -69,6 +81,12 @@ function parseMd(md: string) {
 <Layout {title} {...restProps}>
   <article class="flex flex-col items-center pt-6 w-full">
     <div class="w-[680px] max-w-[90vw]">
+      <div
+        class="blog-date mb-2 text-opacity-60 text-sm"
+        title={fullDate}
+      >
+        {formattedDate}
+      </div>
       <div class="blog-title">
         <h1 class="mb-4">{title}</h1>
       </div>
@@ -82,7 +100,6 @@ function parseMd(md: string) {
           {tags.map((tag) =>
             <a
               class="
-                btn
                 rounded-full
                 bg-zinc-300
                 text-xs
@@ -98,7 +115,12 @@ function parseMd(md: string) {
       }
       {cover && <div class="blog-cover mt-11">
         <figure class="flex flex-col items-center gap-3">
-          <Image src={cover.img} alt={cover.alt ?? ''} />
+          <Image
+            class="rounded-2xl"
+            src={cover.img}
+            alt={cover.alt ?? ''}
+            width={680}
+          />
           {cover.caption && <figcaption set:html={parseMd(cover.caption)}></figcaption>}
         </figure>
       </div>}

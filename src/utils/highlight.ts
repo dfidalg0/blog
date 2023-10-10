@@ -2,6 +2,16 @@ import hljs from 'highlight.js/lib/common';
 
 hljs.registerAliases(['vue', 'svelte'], { languageName: 'xml' });
 
+hljs.registerLanguage('astro', () => ({
+  contains: [
+    {
+      begin: '---',
+      end: '---',
+      ...hljs.getLanguage('typescript'),
+    },
+  ],
+}));
+
 const format = (code: string) => `<pre><code class="hljs">${code}</code></pre>`;
 
 export async function getHighlightHtml(code: string, lang?: string | null) {

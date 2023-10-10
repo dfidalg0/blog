@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watchEffect } from 'vue';
-import { createDomLogger } from '../utils/dom';
+import { createDomLogger } from '@/utils/dom';
 
 const count = ref(0);
 

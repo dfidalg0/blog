@@ -6,7 +6,7 @@ export function setTheme(theme: Theme) {
   localStorage.setItem('prefs.theme', theme);
 }
 
-function isDarkTheme() {
+export function isDarkTheme() {
   return document.documentElement.classList.contains('dark');
 }
 

@@ -1,6 +1,7 @@
 ---
 import '../styles/main.scss';
 import ToggleTheme from '../components/ToggleTheme.astro';
+import Logo from '@/components/Logo.astro';
 
 interface Props {
 	title: string;
@@ -17,15 +18,29 @@ const { title } = Astro.props;
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		<title>{title} - DF</title>
 	</head>
 	<body>
-    <header class="flex dark:bg-rose-800 bg-rose-600 sticky top-0 z-20">
+    <header
+      class="
+        flex
+        items-center
+        dark:bg-rose-800
+        bg-rose-600
+        sticky
+        top-0
+        z-20
+        pl-5
+      "
+    >
+      <div class="">
+        <Logo />
+      </div>
       <nav class="ml-auto py-4 px-8">
         <ToggleTheme />
       </nav>
     </header>
-		<main class="overflow-x-auto max-w-full">
+		<main class="flex flex-col items-center overflow-x-auto max-w-full">
       <slot />
     </main>
 	</body>

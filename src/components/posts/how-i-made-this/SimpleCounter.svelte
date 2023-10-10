@@ -1,6 +1,6 @@
 <script lang="ts">
 import { onMount } from 'svelte';
-import { createDomLogger, type DomLogger } from '../utils/dom';
+import { createDomLogger, type DomLogger } from '@/utils/dom';
 
 let count = 0;
 let logger: DomLogger;

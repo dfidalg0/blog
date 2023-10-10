@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { createDomLogger, type DomLogger } from '../utils/dom';
+import { createDomLogger, type DomLogger } from '@/utils/dom';
 
 const btnClasses = `
   dark:bg-red-950
