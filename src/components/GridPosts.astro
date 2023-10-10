@@ -1,0 +1,30 @@
+---
+import { type CollectionEntry } from "astro:content";
+import CardBlogPost from './CardBlogPost.astro';
+
+type BlogPost = CollectionEntry<'blog'>;
+
+interface Props {
+  posts: BlogPost[];
+}
+
+const { posts } = Astro.props;
+---
+
+<section class="posts mt-10">
+  {posts.map((post) => <CardBlogPost {post} />)}
+</section>
+
+<style lang="scss">
+.posts {
+  @apply
+    w-full
+    gap-5
+    grid
+    grid-cols-1
+    sm:grid-cols-2
+    md:grid-cols-3
+    lg:grid-cols-4
+    justify-items-center
+}
+</style>

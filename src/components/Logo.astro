@@ -7,7 +7,7 @@ const { size = '1.618rem' } = Astro.props;
 ---
 
 <a
-  class="bg-background bg-opacity-80 p-2 block text-font hover:text-font"
+  class="df-logo bg-background bg-opacity-80 p-2 block text-font hover:text-font"
   href="/"
 >
   <svg
@@ -30,3 +30,10 @@ const { size = '1.618rem' } = Astro.props;
     </g>
   </svg>
 </a>
+
+<script>
+if (location.pathname === '/') {
+  document.querySelectorAll<HTMLAnchorElement>('.df-logo')
+    .forEach((el) => el.addEventListener('click', (e) => e.preventDefault()));
+}
+</script>

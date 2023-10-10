@@ -2,7 +2,7 @@
 import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
 import { getCollection } from 'astro:content';
 import BlogLayout from '../../layouts/BlogLayout.astro';
-import { creationTimes } from 'virtual:creation-times';
+import { getCreationTime } from '@/utils/posts';
 
 export const getStaticPaths = (async () => {
   const blogEntries = await getCollection('blog');
@@ -18,7 +18,7 @@ type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { entry } = Astro.props;
 
-const creationTime = creationTimes[`src/content/blog/${entry.id}`];
+const creationTime = getCreationTime(entry);
 
 const { Content } = await entry.render();
 ---

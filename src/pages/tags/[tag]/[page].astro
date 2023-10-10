@@ -1,21 +1,20 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import type { InferGetStaticPropsType } from 'astro';
 import Layout from '@/layouts/Layout.astro';
-import { Image } from 'astro:assets';
-import { creationTimes } from 'virtual:creation-times';
+import GridPosts from '@/components/GridPosts.astro';
+import { getCreationTime } from '@/utils/posts';
 
-const formatter = Intl.DateTimeFormat('en', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-});
+type BlogPost = CollectionEntry<"blog">;
+
+const creationTime =
+  (entry: BlogPost) => getCreationTime(entry, 'unix');
 
 export const getStaticPaths = (async ({ paginate }) => {
   const entries = await getCollection('blog');
 
-  const tags = new Set<string>(['none']);
+  const tags = new Set<string>(['none', 'all']);
 
   for (const entry of entries) {
     for (const tag of entry.data.tags) {
@@ -28,10 +27,12 @@ export const getStaticPaths = (async ({ paginate }) => {
   // so that Astro knows which tag grouping the result is for.
   return Array.from(tags).flatMap((tag) => {
     const posts = entries.filter((entry) => {
+      if (tag === 'all') return true;
+
       if (tag === 'none') return !entry.data.tags.length;
 
       return entry.data.tags.includes(tag);
-    });
+    }).sort((a, b) => creationTime(b) - creationTime(a));
 
     return paginate(posts, {
       params: { tag },
@@ -51,37 +52,18 @@ const { prev, next } = page.url;
 <Layout title={`Tag: ${tag}`}>
   <div class="flex flex-col items-center w-[1080px] max-w-[90vw]">
     <section class="w-full">
-      <h2 class="title">Posts with tag: <span class="tag">{tag}</span></h2>
+      <h2 class="title">{(() => {
+        switch (tag) {
+          case 'none':
+            return 'Posts with no tag';
+          case 'all':
+            return 'All posts';
+          default:
+            return <>Posts with tag: <span class="tag">{tag}</span></>
+        }
+      })()}</h2>
     </section>
-    <section class="posts mt-10">
-      {page.data.map((item) =>
-        <a
-          href={`/posts/${item.slug}`}
-          class="card"
-        >
-          <article>
-            <section class="text-[11px]">
-              {formatter.format(creationTimes[`src/content/blog/${item.id}`])}
-            </section>
-            <section class="text-xl font-bold">
-              {item.data.title}
-            </section>
-            {item.data.cover &&
-              <section class="cover mt-5 w-100">
-                <Image
-                  src={item.data.cover.img}
-                  alt={item.data.cover.alt ?? ''}
-                  width={300}
-                />
-              </section>
-            }
-            <section class="mt-3">
-              {item.data.subtitle}
-            </section>
-          </article>
-        </a>)
-      }
-    </section>
+    <GridPosts posts={page.data} />
     <section class="pagination w-full mt-10 mb-16">
       <a class="page-link prev" href={prev}>Previous</a>
       <a class="page-link next" href={next}>Next</a>
@@ -90,22 +72,6 @@ const { prev, next } = page.url;
 </Layout>
 
 <style lang="scss">
-.posts {
-  @apply
-    w-full
-    gap-5
-    grid
-    grid-cols-1
-    sm:grid-cols-2
-    md:grid-cols-3
-    lg:grid-cols-4
-    justify-items-center
-}
-
-.cover {
-  @apply rounded-lg overflow-hidden;
-}
-
 .title {
   @apply flex items-center;
 }
@@ -119,44 +85,6 @@ const { prev, next } = page.url;
     px-[.65em]
     py-[.25em]
     text-xl;
-}
-
-.card {
-  @apply
-    relative
-    text-font
-    hover:text-font
-    col-span-1
-    px-4 pt-5 pb-28
-    bg-zinc-200 dark:bg-slate-900
-    shadow-md
-    shadow-zinc-500
-    dark:shadow-slate-700
-    rounded-xl
-    max-w-[300px];
-
-  &::after {
-    content: '';
-    will-change: opacity;
-    transition: opacity .25s ease-in-out;
-
-    @apply
-      inset-0
-      absolute
-      opacity-0
-      shadow-zinc-500
-      dark:shadow-slate-700
-      shadow-xl
-      rounded-xl;
-  }
-
-  &:focus {
-    outline: none;
-  }
-
-  &:hover::after, &:focus::after {
-    @apply opacity-100;
-  }
 }
 
 .pagination {

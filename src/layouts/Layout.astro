@@ -18,7 +18,7 @@ const { title } = Astro.props;
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title} - DF</title>
+		<title>{title} - The DF Blog</title>
 	</head>
 	<body>
     <header
@@ -36,7 +36,8 @@ const { title } = Astro.props;
       <div class="">
         <Logo />
       </div>
-      <nav class="ml-auto py-4 px-8">
+      <nav class="ml-auto py-4 px-8 flex items-center">
+        <a class="nav-link mr-10" href="/tags/all/1">Posts</a>
         <ToggleTheme />
       </nav>
     </header>
@@ -64,5 +65,9 @@ main {
   @apply pt-10 pb-20 lg:px-20;
   overflow-x: auto;
   min-height: calc(100vh - #{$header-height});
+}
+
+.nav-link {
+  @apply text-font hover:text-font hover:text-opacity-70;
 }
 </style>

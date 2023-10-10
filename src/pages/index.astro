@@ -1,37 +1,53 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import Switch from '../components/Switch.astro';
-import Source from '../components/Source.astro';
+import Layout from "../layouts/Layout.astro";
+import { getCollection, type CollectionEntry } from "astro:content";
+import { getCreationTime } from '@/utils/posts';
+import GridPosts from "@/components/GridPosts.astro";
 
-import vueCode from '../components/SimpleCounter.vue?raw';
-import SimpleCounterVue from '../components/SimpleCounter.vue';
+type BlogPost = CollectionEntry<"blog">;
 
-import svelteCode from '../components/SimpleCounter.svelte?raw';
-import SimpleCounterSvelte from '../components/SimpleCounter.svelte';
+const creationTime = (entry: BlogPost) => getCreationTime(entry, 'unix');
 
-import reactCode from '../components/SimpleCounter?raw';
-import SimpleCounterReact from '../components/SimpleCounter';
+const allPosts = await getCollection("blog");
 
-import DomLogger from '../components/DomLogger.astro';
+const posts = allPosts
+  .sort((a, b) => creationTime(b) - creationTime(a))
+  .slice(0, 12);
+
+const githubLink = 'https://github.com/dfidalg0/blog';
 ---
 
-<Layout title="Welcome to Astro.">
-  <Switch slots={[
-    { id: 'vue', label: 'Vue.js' },
-    { id: 'svelte', label: 'Svelte' },
-    { id: 'react', label: 'React' },
-  ]}>
-    <Source code={vueCode} kind="vue" slot="vue">
-      <SimpleCounterVue client:visible />
-    </Source>
+<Layout title="Welcome">
+  <div class="w-[1080px] max-w-[90vw]">
+    <h1>Welcome</h1>
 
-    <Source code={svelteCode} kind="svelte" slot="svelte">
-      <SimpleCounterSvelte client:visible />
-    </Source>
+    <section class="mt-10 text-justify max-w-2xl">
+      <div>
+        I’m a Full Stack developer with a degree in Computer Engineering from
+        <a
+          href="https://en.wikipedia.org/wiki/Instituto_Tecnol%C3%B3gico_de_Aeron%C3%A1utica"
+          target="_blank"
+          rel="noopener"
+        >
+          <em>Instituto Tecnológico de Aeronáutica</em> (ITA)
+        </a>,
+        located in Brazil. I like talking about software in general and explore
+        brand new technologies coming out, trying to squeeze the most out of them.
+        And I like compilers. And build tools. <del>Webpack is ugly though.</del>
+      </div>
 
-    <Source code={reactCode} kind="none" slot="react">
-      <SimpleCounterReact client:visible />
-    </Source>
-  </Switch>
-  <DomLogger class="component-logs" />
+      <div class="mt-4">
+        This blog is a little hobby of mine. In it, I wanna write about things
+        I'm feeling like writing and try to be the more hands-on I can, showing
+        the things I'm writing about <em>actually working</em> and make every
+        code available. In fact, you can find the source code for this whole
+        blog <a href={githubLink} target="_blank" rel="noopener">here</a>.
+      </div>
+    </section>
+
+    <section class="mt-10">
+      <h2>Latest posts</h2>
+      <GridPosts {posts} />
+    </section>
+  </div>
 </Layout>

@@ -1,0 +1,294 @@
+---
+title: How I made this blog
+subtitle: |-
+  A somewhat elaborate history about what I'm trying to achieve with this blog
+  and the reasoning behind the technology choices that come with it
+cover:
+  img: '@/assets/astro-vite-logos.webp'
+  caption: |-
+    Astro and Vite logos together (available at
+    [the Astro blog](https://astro.build/blog/3/))
+  alt: Astro and Vite logos together
+tags:
+  - meta
+  - astro
+  - vite
+---
+
+import MultiFW from '@/components/posts/how-i-made-this/multi-fw.astro';
+import CodeFile from '@/components/CodeFile.astro';
+
+# Who are you, stranger?
+
+I'm a Full Stack developer with a degree in Computer Engineering from
+[*Instituto Tecnológico de Aeronáutica* (ITA)](
+  https://en.wikipedia.org/wiki/Instituto_Tecnol%C3%B3gico_de_Aeron%C3%A1utica
+), located in Brazil. I like talking about software in general and explore brand
+new technologies coming out, trying to squeeze the most out of them. And I like
+compilers. And build tools. ~Webpack is ugly though.~
+
+So, I was wondering about writing a blog and thought "why not?". BUT, I din't
+want to go the Medium/dev.to path and just write plain blog posts, I kinda wanted
+to do something different, *a little coding maybe*, which explains my next point.
+
+# Why are you doing this?
+
+I want to write posts about coding and actually show things working, add some
+interactivity to users, if I actually got any. Personally, I don't really care
+if someone is really reading it or not, I just want to build something nice
+that I can be sort of proud of, a little hobby.
+
+I could use some blog template somewhere in the internet, but what's the fun
+about it? I wanted to build it from scratch,
+[~starting from the operating system~](https://wikipedia.org/wiki/Linux_From_Scratch),
+and implement all the things I want included. Of course, I don't wanna implement
+the SSR bits or do any systems programming in order to achieve that, it's still
+just a freaking blog.
+
+# So, Astro, huh?
+
+I was looking into
+[Astro](https://astro.build/)
+for some time with some interest. The ability to use many frameworks at once
+was definetely a catch to me. See, I want to do a practical display of many
+different technologies and Astro gives me a way to easilly do that and even
+integrate them (at least for web frameworks), what's not to like about it?
+
+So, I decided to give it a try and the experience was really good. The multi-framework
+thing is not the only thing Astro does for you. It can also do SSR and SSG out
+of the box without ever being confusing on wheter some code will run on client or
+server side (or even at build time), everything shipping JS only when it's necessary.
+
+It alsos encourages devs to reach directly to Web APIs in order to add low bundle
+cost interactivity to their websites. And it uses
+[Vite](https://vitejs.dev/),
+so, we have really fast feedback loops.
+
+In order to show some of these things, I built the same component in Vue, Svelte
+and React, then I wrapped them into a bunch of Astro components that coordinate
+everything. The framework component is simply a counter with an increment and a
+decrement button, everything else is just Typescript directly manipulating the
+DOM.
+
+<MultiFW />
+
+Notice how those components play nice together and, most importantly, how their
+bundles are loaded only when they're visible on the screen (check your Network
+tab if you want to be sure), which was achieved by simply adding a
+[`client:visible`](https://docs.astro.build/reference/directives-reference/#clientvisible)
+directive.
+
+# But not just Astro
+
+Of course one can build an entire application from just Astro, but that's not
+the idea here. I want to use every single shiny thing left by the ecosystem.
+Then, here I'll list the tools I used and how I used them. Some tools are
+inherent to Astro, like Vite, Remark and Rehype, some are choices, like
+Highlight.js and TailwindCSS. For all tools that fall into this second category,
+I'll try my best to explain why I choose them.
+
+But here's a catch: installing dependencies should be a last resort to achieve
+things, since each one of them can pose a security risk and you need to figure
+out how to use all of them. So, the only tools listed here are the ones that
+provide features I really cannot implement by myself.
+
+Maybe I'm reinventing the wheel sometimes, but I think it's better to tailor
+made a wheel that attends all of my needs than buying a full blown automaker
+just because I need a simple wheel, which is the case for most `npm` packages.
+
+## pnpm
+
+[pnpm](https://pnpm.io/) is a disk efficient package manager which I didn't have
+tried at the time of writing this post and wanted to try it out too and it was
+simply wonderful. I needed a few more `pnpm add`'s to get some things to work,
+but it's a small price to pay for pnpm's global package store and its strictness
+*i.e* if I use an `import` statement, I know it's gonna work since it's on my
+[`package.json`](github://package.json).
+
+## TailwindCSS
+
+If you read some source code in the
+[section above](#so-astro-huh),
+you probably noticed that I'm using
+[TailwindCSS](https://tailwindcss.com/),
+because utility classes make my life better, it was
+[incredibly easy](https://tailwindcss.com/docs/guides/astro)
+to setup and integrates really well with the light/dark toggle.
+
+Now that we're getting tailwindy, there are different ways we can use it. We
+could, for instance, just add a bunch of classes on everything we want to style
+(and it's fine), but I prefered to tweak it a little bit, so I went without
+`@astrojs/tailwind` base styles
+
+```ts
+// astro.config.mjs
+
+import tailwind from "@astrojs/tailwind";
+
+export default defineConfig({
+  integrations: [tailwind({ applyBaseStyles: false })],
+});
+```
+
+then I configured the `background` and `font` colors on
+[`tailwind.config.cjs`](github://tailwind.config.cjs) and
+added a bunch of styles inside `@layer base` on my
+[`main.scss`](github://src/styles/main.scss), which is imported by my base
+layout. Then I started to write this very post and feel the need to create
+[another file](github://src/styles/md.scss)
+with some custom configuration simply for the posts content.
+
+## SCSS
+
+Now, this can feel not ideal for some people and Tailwind even
+[discourages the use of preprocessors](https://tailwindcss.com/docs/using-with-preprocessors#using-sass-less-or-stylus), but I really like SCSS for
+its nesting and the ability to define build-time variables. I admit this can be
+more of a personal taste than anything else, but I think there's no problem with
+that since this is just a personal blog.
+
+Maybe I can achieve everything SCSS does with [PostCSS](https://postcss.org/),
+which is installed in Vite by default and provides the API used by Tailwind, but
+I simply know SCSS more and
+[its setup](https://vitejs.dev/guide/features.html#css-pre-processors)
+was even easier than Tailwind's.
+
+## MDX
+
+Markdown is great for its simple syntax that enables users to focus more on the
+content instead of worrying about HTML structure, even though you can use HTML
+inside a markdown text. Since I'm writting a blog, which is content heavy by
+default, markdown is almost mandatory.
+
+But since we cannot use components inside markdown, writting interactive pages
+with it starts to be harder than using Astro components. This is where MDX comes
+in - as a superset of Markdown that allows usage of components, we have the best
+of both words for authoring our posts. Besides, adding it was really easy, I just
+needed to run a simple `pnpm astro add mdx` and I was good to go.
+
+## Highlight.js
+
+This was probably the best part of this implementation. Per the docs,
+[Astro comes with two built-in syntax highlighters](https://docs.astro.build/guides/markdown-content/#syntax-highlighting):
+[Prism](github:///PrismJS/prism)
+and
+[Shiki](github:///shikijs/shiki).
+It happened that both of them weren't good enough to me for toggling light and
+dark mode of the Atom One theme, which is a personal favorite, especially the
+dark one.
+
+So, I stumbled uppon
+[Highlight.js](github:///highlightjs/highlight.js),
+which has a simple and easy API with great customization capability, since it
+just uses CSS classes. With SCSS, implementing the dark mode toggler was really
+simple:
+
+```scss
+@import 'highlight.js/styles/atom-one-light';
+
+:root.dark {
+  @import 'highlight.js/styles/atom-one-dark';
+}
+```
+
+Now, two things are missing:
+
+* Remark's doesn't put the markup generated by highlight.js into the HTML generated
+  from markdown code
+* Those styles don't apply at all to my code snippets
+
+So, we need to address those, the easy way? Of course not, the hard way, which
+is much more interesting and will interact with both Remark's and Vite's plugin
+APIs.
+
+### Remark
+
+Astro uses [Remark](github:///remarkjs/remark) under the hood to parse
+markdown and generate HTML from that. This tool has a nice plugin API that can
+be used to customize HTML generation. So, we can use that to render the markdown
+code blocks in an appropriate way, *i.e.* wrapped in `<pre><code class="hljs">`
+and with the appropriate `hljs` classes.
+
+We can do that by traversing Remark's AST and replacing the  `code` nodes with
+`html` ones containing our `hljs` generated markup.
+
+<CodeFile file="plugins/remark/highlight.ts" />
+
+`getHighlightHtml` implementation is as follows
+
+<CodeFile file="src/utils/highlight.ts" />
+
+After doing this, we can use our Remark plugin on our `astro.config.mjs` by
+disabling Astro's default syntax highlighting mechanism and passing our plugin
+to `markdown.remarkPlugins`.
+
+```js
+import { defineConfig } from 'astro/config';
+import vue from "@astrojs/vue";
+import svelte from "@astrojs/svelte";
+import react from "@astrojs/react";
+import tailwind from "@astrojs/tailwind";
+import { RemarkHighlight } from './plugins/remark/highlight';
+
+
+export default defineConfig({
+  integrations: [vue(), svelte(), react(), tailwind({ applyBaseStyles: false })],
+  markdown: {
+    syntaxHighlight: false,
+    remarkPlugins: [RemarkHighlight]
+  },
+});
+```
+
+### Vite
+
+Remember that SCSS file used for toggling between Atom One light and dark? Now,
+we have to import this file everywhere there is any hljs generated code, or else
+all the snippets will be uncolored and ugly.
+
+So, there's one perfect valid solution for that, which is importing the `SCSS`
+file on the top level of the base Layout component thus adding those styles to
+every page on the blog. But, do we really need those styles everywhere? Of course
+no, only the pages that have any code snippet written in them have to import that
+file.
+
+Fortunately, Astro is built on top of Vite, which has a pretty good
+[plugin API](https://vitejs.dev/guide/api-plugin.html)
+that extends
+[Rollup's](https://rollupjs.org/).
+So, we can transform our code to only import the SCSS file from the virtual
+modules generated from `.md` and `.mdx` files
+
+<CodeFile file="plugins/vite/md-styles.ts" />
+
+## Vercel
+
+Having everything done, I needed to deploy it somewhere. So I picked
+[Vercel](https://vercel.com/) as it's genuinely easy to deploy there and they
+have a nice free tier, which is perfect for this tiny little blog. To set it up
+I just ran `pnpm astro add vercel` and when I want to deploy, it is just a simple
+`vercel deploy`- _pure breeze_.
+
+> **Note**: I'm not receiving any money from Vercel to promote their service, I'm
+> just pointing out a personal preference. You could host your app on any other
+> service, such as
+> [Amplify](https://aws.amazon.com/amplify/),
+> [DigitalOcean](https://www.digitalocean.com/),
+> [Firebase](https://firebase.google.com/),
+> [Fly.io](https://fly.io/),
+> [Linode](https://www.linode.com/),
+> [Netlify](https://www.netlify.com/)
+> or any other provider you like.
+
+# Wrapping it up
+
+In this article, I showed you without many details how I get this very blog to
+be working. Originally, I was thinking about diving deep into the source code
+and explain it piece by piece, but them realized this article would be just
+ridiculously enormous and boring. So I decided to summarize the main technological
+decisions and dive deep on the source code only for the most important features.
+If you wanna see a deep dive into some other parts of the code, let me know
+somehow.
+
+Finally, thank you for reading this very first article in this blog, hope that
+its content was useful to you in some way or even helped you building your own
+application or taking your own tech decisions somewhere.
