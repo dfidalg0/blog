@@ -33,10 +33,10 @@ const { title } = Astro.props;
         pl-5
       "
     >
-      <div class="">
+      <div class="logo">
         <Logo />
       </div>
-      <nav class="ml-auto py-4 px-8 flex items-center">
+      <nav class="ml-auto py-4 px-8 flex items-center text-zinc-200 dark:text-inherit">
         <a class="nav-link mr-10" href="/tags/all/1">Posts</a>
         <ToggleTheme />
       </nav>
@@ -68,6 +68,6 @@ main {
 }
 
 .nav-link {
-  @apply text-font hover:text-font hover:text-opacity-70;
+  @apply text-current hover:text-current hover:opacity-70;
 }
 </style>

@@ -1,7 +1,7 @@
 .blog-post {
   // inline code
   code:not(.hljs) {
-    @apply bg-zinc-300 dark:bg-zinc-950 px-2 py-0.5 border-red-50;
+    @apply bg-zinc-300 dark:bg-zinc-950 px-2 py-0.5 border-red-50 rounded-sm;
   }
 
   // margins

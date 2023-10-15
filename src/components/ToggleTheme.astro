@@ -32,7 +32,7 @@ togglers.forEach((t) => t.addEventListener('click', () => {
 
 <style lang="scss">
 .light-dark {
-  @apply border-font;
+  @apply border-current;
 
   cursor: pointer;
   appearance: unset;
@@ -71,7 +71,7 @@ togglers.forEach((t) => t.addEventListener('click', () => {
   transform: var(--slider-tranform);
 
   & > svg {
-    @apply fill-font;
+    @apply fill-current;
   }
 
   & > .dark {

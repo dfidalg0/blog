@@ -6,6 +6,10 @@
   box-sizing: border-box;
 }
 
+*::selection {
+  @apply bg-red-300 text-gray-800;
+}
+
 :root {
   font-size: 14px;
 
