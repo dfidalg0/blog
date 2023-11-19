@@ -54,6 +54,12 @@ pre {
   @apply bg-font;
 }
 
+@layer components {
+  .link {
+    @apply text-red-600 hover:text-red-900;
+  }
+}
+
 @layer base {
   // Headings
   h1, h2, h3, h4, h5, h6 {
@@ -82,7 +88,7 @@ pre {
 
   // Links
   a {
-    @apply text-red-600 hover:text-red-900;
+    @apply link;
   }
 
   // Lists
