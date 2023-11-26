@@ -76,9 +76,23 @@ function parseMd(md: string) {
 
   return md;
 }
+
+const schemaOrgJson = JSON.stringify({
+  '@context': "http://schema.org",
+  '@type': "Article",
+  name: title,
+  datePublished: (creationTime ?? new Date()).toJSON().slice(0, 10),
+  ...cover && {
+    image: cover.img.src
+  }
+});
+
+const schemaOrg = `<script type="application/ld+json">${schemaOrgJson}</script>`
 ---
 
 <Layout {title} {...restProps}>
+  <Fragment slot="meta" set:html={schemaOrg} />
+
   <article class="flex flex-col items-center pt-6 w-full">
     <div class="w-[680px] max-w-[90vw]">
       <div
