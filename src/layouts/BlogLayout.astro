@@ -77,21 +77,36 @@ function parseMd(md: string) {
   return md;
 }
 
-const schemaOrgJson = JSON.stringify({
+const baseUrl = 'https://the-df-blog.vercel.app';
+
+const imageUrl = cover ? new URL(cover.img.src, baseUrl) : null;
+
+const schemaOrg = JSON.stringify({
   '@context': "http://schema.org",
-  '@type': "Article",
-  name: title,
+  '@type': "BlogPosting",
+  headline: title,
+  description: subtitle,
+  keywords: tags,
   datePublished: (creationTime ?? new Date()).toJSON().slice(0, 10),
-  ...cover && {
-    image: cover.img.src
+  ...imageUrl && {
+    image: imageUrl.href,
   }
 });
 
-const schemaOrg = `<script type="application/ld+json">${schemaOrgJson}</script>`
+const ogUrl = new URL(Astro.url.pathname, baseUrl);
 ---
 
 <Layout {title} {...restProps}>
-  <Fragment slot="meta" set:html={schemaOrg} />
+  <Fragment slot="head">
+    <script type="application/ld+json" set:html={schemaOrg} set:html={schemaOrg} />
+    <meta property="og:title" content={title} />
+    <meta name="description" content={subtitle}>
+    <meta property="og:description" content={subtitle} />
+    <meta property="og:url" content={ogUrl.href} />
+    <meta property="og:image" content={imageUrl?.href ?? ''} />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="The DF Blog" />
+  </Fragment>
 
   <article class="flex flex-col items-center pt-6 w-full">
     <div class="w-[680px] max-w-[90vw]">
