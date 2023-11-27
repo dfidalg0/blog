@@ -1,0 +1,851 @@
+---
+title: It's called Javascript, not Java
+subtitle: |-
+  Why common OOP patterns can harm your Javascript code if applied by the book
+  and what to do instead
+cover:
+  img: '@/assets/oom.png'
+  caption: |-
+    OOP code demostrating some convoluting way of creating different buttons
+    with the same interface for two different OSes in Typescript. Is it bad?
+    Hell yeah. Is it **real**? Of course not.
+  alt: Astro and Vite logos together
+tags:
+  - javascript
+  - typescript
+  - programing
+  - oop
+---
+
+import StateManagerArch from '@/components/posts/its-called-javascript/StateManagerArch.astro'
+
+# Introduction
+
+Back in 1994, the concept of Object Oriented Programing got popular, arising
+with some
+[design patterns](https://refactoring.guru/design-patterns/catalog),
+described in the book
+[*Design Patterns*](
+  https://www.oreilly.com/library/view/design-patterns-elements/0201633612/
+)
+authored by Erich Gamma, Richard Helm, Ralph Johnson and John Vlissides. Those
+patterns are common ways to solve problems that can be used as guides on how to
+structure your OOP code and, consequently, how Java programmers tend to approach
+problems.
+
+Speaking of Java, it was released in 1995, just some time after the big OOP boom,
+having object orienting
+[one of its 5 core principles](https://en.wikipedia.org/wiki/Java_(programming_language)#Principles),
+which surely speaks a lot about how the language is structured. To this day,
+Java is still very popular and relevant, and often referred as the _de facto_
+OOP language.
+
+Somewhat inspired by Java's syntax, Javascript was then created on late 1995
+trying to embrace its popularity by adopting its name. Later on, JS added OOP
+functionalities implemented with prototypal inheritance and, within ES6, added
+a `class` syntax similar to Java's. And today, lots of JS code resembles Java
+in its concepts and structure without having the type-safety provided by a static
+type system, which was improved later by Typescript, that adds a static **type
+hinting** system.
+
+But, hear me out, what if it's a bad idea? What if by using common Java structure
+you're actually slowing down your code unnecessairily, harming user experience,
+and making it more complex, harming developer experience? What would you do?
+Refactor everything into procedural code like it's a shell script? That's what
+I want to discuss on the next sections of this article.
+
+# The builder pattern
+
+One of the design patterns described by Gamma's book is the builder pattern.
+It's useful for building complex objects with lots of parameters. We'll use it
+to exemplify a common trend of JS patterns usually being simpler and having less
+code.
+
+No more talking, the pattern goes like this:
+
+1. Create a class that represents the object you want to build
+2. Create a builder class that holds an instance of the object class and its
+creation options.
+3. Add a bunch of methods to setup each property of the object class.
+4. Add a `build` method to the builder class, that releases a new instance of
+the object class with all the options set.
+
+It's usual to return the builder instance after every `setX` method call. This
+way we can chain the builder calls in a concise and clean way. After doing that,
+everytime we want to instantiate our object class, we instantiate the builder
+instead, add what we want and then `build` the thing, like below.
+
+```typescript
+function createEmployee(hasITknowledge: boolean) {
+  return new EmployeeBuilder()
+    .setFirstName('John');
+    .setLastName('Doe')
+    .setDepartment(hasITknowledge ? 'IT' : 'Management');
+    .build();
+}
+```
+
+In this code, we create a `Employee` instance based on the IT knowledge of a
+person. To implement the actual builder, we would do as follows
+
+```typescript
+class Employee {
+  constructor(
+    private firstName: string,
+    private lastName: string,
+    private department: string
+  ) {}
+
+  sayHi() {
+    console.log(
+      `Hi from ${this.firstName} ${this.lastName} from ${this.department}`
+    );
+  }
+}
+
+export class EmployeeBuilder {
+  private firstName?: string;
+  private lastName?: string;
+  private department?: string;
+
+  setFirstName(name: string) {
+    this.firstName = name;
+  }
+
+  setLastName(name: string) {
+    this.lastName = name;
+  }
+
+  setDepartment(dep: string) {
+    this.department = dep;
+  }
+
+  build() {
+    if (!this.firstName || !this.lastName || !this.department) {
+      throw new Error('Cannot build employee. Missing data');
+    }
+
+    return new Employee(this.firstName, this.lastName, this.department);
+  }
+}
+```
+
+This looks kinda organized and well-structured, but look at how much code we
+wrote and how many function calls we're making, builder objects we're creating
+just to be garbage collected right after, and complexity we're adding to our
+code in order to simply create `Employee` objects.
+
+Now, look the following code. How each of its lines differ from the ones of the
+former in terms of intent? *i.e.* the reason the line is there.
+
+```typescript
+function createEmployee(hasITknowledge: boolean) {
+  return new Employee({
+    firstName: 'John',
+    lastName: 'Doe',
+    department: hasITknowledge ? 'IT' : 'Management',
+  });
+}
+```
+
+Yes, nothing. It's the same code as before, just presented in a different form.
+But the implementation actually looks quite different
+
+```typescript
+export type EmployeeInfo = Readonly<{
+  firstName: string;
+  lastName: string;
+  department: string;
+}>;
+
+export class Employee {
+  constructor(
+    private info: EmployeeInfo
+  ) {}
+
+  sayHi() {
+    const { info } = this;
+
+    console.log(
+      `Hi from ${info.firstName} ${info.lastName} from ${info.department}`
+    );
+  }
+}
+```
+
+That's way less code that get's downloaded, parsed and executed by your client's
+machine. Also, the code is dead simple and as performant as it can be, without
+calling lots of functions or adding garbage collection.
+
+So, usually, the "options object" is the way to go in JS/TS, it's almost everytime
+equivalent to the builder pattern.
+
+> It's worth mentioning although the "options object" pattern is the more common
+> way of constructing complex objects in JS/TS, the builder pattern is sometimes
+> useful semantically, *e.g.* on query builders, where chaining options with
+> methods make the code looks more like SQL. thus easier to read due to familiarity.
+
+## A real world example
+
+Javascript has took somethings straight from Java in the past, the good and
+the bad parts (Date API, I'm looking at you), but modern JS now tends to be
+more its own thing and developing its own patterns (that can be influences of
+other languages, of course). For instance, let's compare the modern native way
+of performing http requests in Java and Javascript.
+
+In Java, it tends to use the builder pattern for constructing the request and
+client objects, following it by heart. The example bellow show us an example
+POST request that creates a user using an API that requires the presence of a
+bearer token in the `Authorization` header.
+
+```java
+import java.net.URI;
+import java.net.http.*;
+
+public class MyProgram {
+  public static void main(String[] args) {
+    final String body = "{ \"firstName\": \"John\", \"lastName\": \"Doe\" }";
+    final URI uri = new URI("https://some-api.com/users/");
+
+    final HttpRequest req = HttpRequest.newBuilder()
+      .uri(uri)
+      .method("POST", HttpRequest.BodyPublishers.ofString(body))
+      .header("Authorization", "Bearer <token>")
+      .build();
+
+    final HttpResponse res = HttpClient.newBuilder()
+      .build()
+      .send(req, HttpResponse.BodyHandlers.ofString());
+
+    if (res.statusCode() < 400) {
+      System.out.println("User created successfully");
+    } else {
+      System.err.println("An error occured");
+    }
+  }
+}
+```
+
+In Javascript, things tend to be simpler and straight to the point (possibly in
+expense of having more control).
+
+```typescript
+const res = await fetch('https://some-api.com/users', {
+  method: 'POST',
+  body: '{ "firstName": "John", "lastName": "Doe" }',
+  headers: {
+    'Authorization': 'Bearer <token>',
+  },
+});
+
+if (res.ok) {
+  console.log('User created successfully');
+} else {
+  console.error('An error occured');
+}
+```
+
+It's possibly like this out of sheer necessity - Javascript **NEEDS** to be small,
+otherwise, users will be downloading lots of uneeded code, which degrades
+performance and increase page loading times.
+
+This leads us to our next section, which will discuss the impact of common Java
+OOP on bundle sizes.
+
+# `class` is not treeshakeable
+
+Modern day Javascript is often bundled by tools like
+[Webpack](https://webpack.js.org/),
+[Rollup](https://rollupjs.org/),
+[Parcel](https://parceljs.org/),
+[Esbuild](https://esbuild.github.io/)
+or, my personal favorite,
+[Vite](https://vitejs.dev/).
+Those tools benefit from ESM `import/export` syntax to keep on JS final bundle
+exactly what needs to be there. For instance, if an external library has code
+like this
+
+```typescript
+// node_modules/some-lib/index.js
+
+export function doSomething() {
+  // some cheap utility function
+}
+
+export function doAnotherThing() {
+  // expensive function with lots of dependencies and millions of lines of code
+  // that can literally build the entire universe from scratch
+}
+```
+
+and you have a `import { doSomething } from 'some-lib'` statement, your bundler
+will (probably) be smart enough to know `doAnotherThing` can be skiped by the
+bundling process, and the final bundle that your client or serverless runner
+will read, parse and execute is left as smallest as possible.
+
+Now, supose it was implemented as a Singleton, for example,
+
+```typescript
+export class ThingDoer {
+  private constructor() {}
+
+  private static instance?: ThingDoer;
+
+  static getInstance() {
+    return ThingDoer.instance ??= new ThingDoer();
+  }
+
+  doSomething() { /* ... */ }
+  doAnotherThing() { /* ... */ }
+}
+```
+
+Now, your bundle will contain both `doSomething` and `doAnotherThing` without
+the latter ever being used.
+
+This was a problem to Google's
+[Firebase](https://firebase.google.com/)
+on their web SDK. So, Firebase web SDK went modular on v9. With that change,
+Firebase was able to reduce its footprint on JS bundles by
+[up to 80%](https://firebase.blog/posts/2021/07/introducing-the-new-firebase-js-sdk).
+
+The same aproach Firebase used on their product can help you improve the bundle
+size of your own application. For instance, supose you are building a social
+network and you have a `User` class like this
+
+```typescript
+export interface UserInfo {
+  firstName: string;
+  lastName: string;
+}
+
+export class User {
+  constructor(private id?: string, private info?: UserInfo) {}
+
+  getId(): string {
+    return this.id ??= generateRandomId();
+  }
+
+  async create() {}
+
+  async getInfo(): Promise<UserInfo> {}
+
+  async updateInfo(patch: Partial<UserInfo>) {}
+
+  async getFriends(): Promise<User[]> {}
+
+  async addFriends(ids: string[]) {}
+
+  async removeFriend(friendId: string) {}
+}
+```
+
+Now, supose you're on the user's profile page, where they can view their own
+info, their friends and other stuff. You basically need only two of those
+functions to display this page: `getInfo` and `getFriends`. Some features could
+be lazy loaded like the `removeFriend` and `updateInfo` that are very unlikely
+to be used when the user enters his profile and some features like `create`
+aren't used at all.
+
+But, still, you load everything.
+
+Of course you can split this into multiple classes, but where is **the** place
+to do the split? It's simply easier to ditch the `class` altogether and use ESM
+in your favor.
+
+```typescript
+export async function createUser(id: string, info: UserInfo) {}
+
+export async function getUserInfo(userId: string): Promise<UserInfo> {}
+
+export async function updateUserInfo(userId: string, patch: Partial<UserInfo>) {}
+
+export async function getUserFriends(userId: string): Promise<User[]> {}
+
+export async function addFriendsToUser(userId: string, friendIds: string[]) {}
+
+export async function removeFriendFromUser(userId: string, friendId: string) {}
+```
+
+With this, you can import only what you need and let your bundler do its job
+optimizing your JS so your users don't have to download 6 functions when only
+2 are actually needed. You can also dynamically import `removeFriend` and
+`updateInfo` only when the user actually performs said action or, if you prefer,
+you can load them in the background while the profile page is loading.
+
+Also, if you're using a a method lots of times and don't want to keep passing
+down the same parameter over and over again, you can `.bind` the method's first
+parameter
+
+```ts
+const addFriends = addFriendsToUser.bind(null, 'some-user-id');
+```
+
+Although removing classes may help improving bundle size, there are some problems
+that come with it, mainly when you're used to write object oriented code. In the
+next section, I'll discuss some of those drawbacks and how to handle them.
+
+# Handling private state
+
+Private state is a pretty common thing in OOP and Javascript has it natively via
+`#` class fields. But now that I'm saying classes should be avoided, how can we
+manage private state?
+
+Well, let's break it down into two cases: singletons and non-singletons.
+
+## Singletons
+
+Singletons are a common pattern (or anti-pattern as some might say) that goes
+like this:
+
+* There's only a single source that can give you an object
+* This source gives you the same object every time you request it
+
+In Java, it's usually implemented like this
+
+```java
+public class Singleton {
+  private static Singleton instance;
+
+  public static Singleton getInstance() {
+    if (instance == null) instance = new Singleton();
+
+    return instance;
+  }
+
+  private Singleton() {
+    myState = 'some-value';
+  }
+
+  private String myState;
+}
+```
+
+which translates directly to Typescript as
+
+```ts
+export default class Singleton {
+  private static instance?: Singleton;
+
+  public static getInstance() {
+    return this.instance ??= new Singleton();
+  }
+
+  private constructor() {}
+
+  private myState = 'some-value';
+}
+```
+
+But, hey, you don't need to memorize this pattern apply it just like it was
+popularized in Java. If you stick to the concept, you'll realize Javascript's
+module system is precisely managing singletons for you. See? You can request
+a module by its id and you'll always receive the same instance every single time.
+
+So, think of your very JS/TS module as a singleton and you'll see that dealing
+with private state is simply declaring a non-exported variable.
+
+So, let's say, for example, we're building a [slither.io](https://slither.io/)-like
+game where you just go there, choose a nickname and are able to play. Your
+current user can be managed as a singleton like this
+
+```ts
+let nickname: string | undefined;
+
+export function setUserNickname(newNickname: string) {
+  if (!newNickname) {
+    throw new Error('Nickname must not be empty');
+  }
+
+  nickname = newNickname;
+}
+
+export function getUserNickanme() {
+  if (!nickname) {
+    throw new Error('User does not have a nickname');
+  }
+
+  return nickname;
+}
+```
+
+You can also do lazy initialization by requiring the singleton instance to be
+passed as a parameter to your functions. In this example, we're creating a
+connection to a key-value remote store like [Redis](https://redis.io). In this,
+we can get only a single connection to the store and then use it to set or
+retrieve a key with a private variable used as a local cache.
+
+```ts
+async function createConnection(): Promise<Connection> {
+  // establishes a connection with the storage
+}
+
+let connPromise: Promise<Connection> | undefined;
+
+export async function getConnection() {
+  return connPromise ??= createConnection();
+}
+
+export async function setKey(conn: Connection, key: string, value: string) {
+  // ...
+}
+
+const cache: Record<string, Promise<string>> = {};
+
+async function doGetKey(conn: Connection, key: string): Promise<string> {
+  // ...
+}
+
+export async function getKey(conn: Connection, key: string) {
+  return cache[key] ??= doGetKey(conn, key);
+}
+
+export function getSomeSyncInfo(conn: Connection) {
+  // returns some information available to the connection synchronously
+}
+```
+
+You can also remove the need to pass `conn` to every function by calling
+`getConnection` from the exported methods. But doing so, you now have a coloring
+problem - every function must be async.
+
+```ts
+// ...
+
+export async function setKey(key: string, value: string) {
+  // Every function must get the connection before actually do its own thing
+  const conn = await getConnection();
+  // ...
+}
+
+// ...
+
+export async function getSomeSyncInfo() {
+  const conn = await getConnection();
+  // now, everything down here is synchronous, but you need to get the
+  // connection before and now you need to make this function async
+}
+```
+
+You can also go with async initialization but then get the asynchronously
+created `conn` synchronously, which can be convenient, but lets you shoot
+yourself in the foot.
+
+```ts
+// ...
+
+let connPromise: Promise<Connection> | null = null;
+let cachedConnection: Connection | undefined;
+
+export async function initConnection() {
+  if (cachedConnection) return;
+
+  await connPromise ??= createConnection()
+    .then((conn) => {
+      cachedConnection = conn;
+      connPromise = null; // the promise can be garbage collected now
+    });
+}
+
+// Now, getConnection is synchronous
+function getConnection() {
+  if (!cachedConnection) {
+    throw new Error('Connection not established');
+  }
+
+  return cachedConnection;
+}
+
+export function getSomeSyncInfo() {
+  // our function now can be synchronous, but now it can throw an error
+  const conn = getConnection();
+  // our sync logic keeps being sync
+}
+```
+
+This way, you are responsible for initializing the connection before doing
+anything, otherwise you'll get an error thrown at your face. This is a coomon
+approach in some database engines for Node.js.
+
+It's also important to state that all that's described here would be precisely
+the same thing using a singleton class, but without treeshakability. So, for
+singletons, there's absolutely no reason to write a class instead of just using
+pure ESM besides stylistic choices. This is because, as stated before, ES modules
+ARE singletons by design, there's no need to reinvent it.
+
+But in OO, it's pretty common to have multiple instances of an object, not just
+a simple singleton. What if we need private state in those scenarios?
+
+## Non-singletons
+
+Enough of singletons - now, we're talking about everything else. How can we model
+objects that have private state without using classes? In OO, functions inside
+an object are the only ones that can access properties that live inside the same
+object.
+
+```ts
+class Rect {
+  #area: number;
+  #width: number;
+  #height: number;
+
+  constructor(width: number, height: number) {
+    this.#width = width;
+    this.#height = height;
+    this.#updateArea();
+  }
+
+  #updateArea() { this.#area = this.#width * this.#height; }
+
+  get width() { return this.#width; }
+  get height() { return this.#height; }
+  get area() { return this.#area; }
+  set width(w: number) { this.#width = w; this.#updateArea() }
+  set height(h: number) { this.#height = h; this.#updateArea() }
+}
+```
+
+We can mimic this behaviour using ES6 `Symbol`s if we wish
+
+```ts
+const privateSym = Symbol('private-properties');
+
+type Rect = ReturnType<typeof createRect>;
+
+export function createRect(width: number, height: number) {
+  return {
+    // ... public
+    [privateSym]: {
+      // private
+      width,
+      height,
+      area: width * height,
+    }
+  };
+}
+
+function updateArea(rect: Rect) {
+  const priv = rect[privateSym];
+  priv.area = priv.height * priv.width;
+}
+
+export function getWidth(rect: Rect) { return rect[privateSym].width; }
+export function getHeight(rect: Rect) { return rect[privateSym].height; }
+export function getArea(rect: Rect) { return rect[privateSym].area; }
+export function setWidth(rect: Rect, w: number) {
+  rect[privateSym].width = w;
+  updateArea(rect);
+}
+export function setHeight(rect: Rect, h: number) {
+  rect[privateSym].height = h;
+  updateArea(rect);
+}
+```
+
+Turns out this is creating properties that aren't really private, since
+`privateSym` can be obtained by a `Object.getOwnPropertySymbols` call. Although
+this can be enough in some cases, we're pursuing the ideal way.
+
+So, what if we take the private state away from the object by delegating them
+to a module level private state manager like the following?
+
+<StateManagerArch />
+<span class="text-xs">Diagram made with [Excalidraw](https://excalidraw.com)</span>
+
+Well, turns out we can! Since we know how to declare private state in a singleton
+ESM, we can declare this said state manager. For best performance and memory
+usage, we can use a
+[`WeakMap`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WeakMap)
+as it won't hold the object private properties after the object is garbage
+collected. This will make our code look like this
+
+```ts
+const state = new WeakMap<Rect, State>();
+
+declare const __isRect: unique symbol;
+
+interface Rect {
+  [__isRect]: true;
+}
+
+interface State {
+  width: number;
+  height: number;
+}
+
+export function createRect(width: number, height: number) {
+  const rect = {} as Rect;
+  state.set(rect, { width, height, area: width * height });
+  return rect;
+}
+
+// public static method
+export const createSquare = (size: number) => createRect(size, size);
+
+// private method
+function updateArea(rect: Rect) {
+  const priv = state.get(rect)!;
+  priv.area = priv.height * priv.width;
+}
+
+// public methods
+export function getWidth(rect: Rect) { return state.get(rect)!.width; }
+export function getHeight(rect: Rect) { return state.get(rect)!.height; }
+export function getArea(rect: Rect) { return state.get(rect)!.area; }
+export function setWidth(rect: Rect, w: number) {
+  state.get(rect)!.width = w;
+  updateArea(rect);
+}
+export function setHeight(rect: Rect, h: number) {
+  state.get(rect)!.height = h;
+  updateArea(rect);
+}
+```
+
+In this code, we declared an inexistent symbol (`__isRect`) that won't ever be
+used, but will make Typescript complain when you try to pass anything else than
+a rect to any of the functions, making this ES Module behave almost identically
+to a `class`. If you want to know more about this, you can look for "branded
+types".
+
+Of course this example is convolute to a certain extent since it's just a simple
+rect object and the `class` code is much shorter. In a case like this one, you
+probably should prefer using a `class` directly, but when you have a really
+big object like Firebase did, splitting the code like this can improve bundle
+sizes dramatically, improving user experience as well.
+
+We can generalize this idea by implementing the actual state manager we draw
+earlier like this:
+
+```ts
+// state-manager.ts
+
+declare const __priv: unique symbol;
+
+type State = Record<string, unknown>;
+type Instance<Pub, Priv> = Pub & { [__priv]: Priv };
+type MethodContext<P, S> = { self: Instance<P, S>; priv: S };
+type Builder<Args extends unknown[], Pub extends State, Priv extends State> =
+  (...args: Args) => ({ pub: Pub, priv: Priv });
+
+export function createStateManager<
+  Args extends unknown[] = [],
+  Pub extends State = Record<string, never>,
+  Priv extends State = Record<string, never>
+>(builder: Builder<Args, Pub, Priv>) {
+  const stateMap = new WeakMap<Instance<Pub, Priv>, Priv>();
+
+  /*@__NO_SIDE_EFFECTS__*/
+  function build(...args: Args) {
+    const state = builder(...args);
+    const instance = (state.pub ?? {}) as Instance<Pub, Priv>;
+    stateMap.set(instance, state.priv ?? {} as Priv);
+    return instance;
+  }
+
+  /*@__NO_SIDE_EFFECTS__*/
+  function fn<Args extends unknown[], Ret>(
+    impl: (ctx: MethodContext<Pub, Priv>, ...args: Args) => Ret
+  ) {
+    return (self: Instance<Pub, Priv>, ...args: Args) => {
+      const ctx = Object.defineProperties(
+        { self } as MethodContext<Pub, Priv>,
+        { priv: { get: stateMap.get.bind(stateMap, self) } }
+      );
+
+      return impl(ctx, ...args);
+    }
+  }
+
+  return { build, fn };
+}
+```
+
+The `@__NO_SIDE_EFFECTS__` comments tell your bundler the `build` and `fn`
+functions have no side effects, which means it can remove calls to them if the
+return value is not actually used.
+
+It seems lengthy at first, but most of this code is actually just Typescript
+generics manipulation that will be removed. So, the whole thing minified will
+be just 258 bytes in the end.
+
+Finally, our `Rect` example will look like this:
+
+```ts
+// rect.ts
+
+import { createStateManager } from './state-manager';
+
+const Rect = createStateManager(
+  (width: number, height: number) => ({
+    priv: { width, height, area: width * height}
+  })
+);
+
+export const createRect = Rect.build;
+
+export const createSquare = (size: number) => createRect(size, size);
+
+// We can define our methods with `fn` calls. Those methods will receive the
+// instance's public and private state, but the actual interface will expect
+// the Rect instance as the first parameter
+const updateArea = Rect.fn(({ priv }) => priv.area = priv.width * priv.height);
+
+export const getWidth = Rect.fn(({ priv }) => priv.width);
+export const getHeight = Rect.fn(({ priv }) => priv.height);
+export const getArea = Rect.fn(({ priv }) => priv.area);
+
+export const setHeight = Rect.fn(({ self, priv }, height: number) => {
+  priv.height = height;
+  updateArea(self);
+});
+
+export const setWidth = Rect.fn(({ self, priv }, width: number) => {
+  priv.width = width;
+  updateArea(self);
+});
+```
+
+And now, every function a module wants to use from the `Rect` object must be
+imported by it, in a way that bundlers like Rollup can remove the entire
+implementation of unused functions in a bundle. This simple example won't do
+much, in fact it would be better off just using classes, but in a larger module,
+which is quite usual, it would make a real difference.
+
+So, now that we know how to implement main `class` functionalities without using
+actual classes, having discussed the drawbacks of such implementation, we can
+now wrap everything up in the next (and last) section.
+
+# Final Thoughts
+
+If you reach all the way through here, congratulations, you're a fighter. In this
+section I'll try to sumarize the whole thing and discuss about what I said here.
+
+In this article, I talked about design patterns common to OOP that have very
+specific implementations in Java and how those patterns can harm your JS code
+if implemented as they are, since they can make lots of code go to your final
+bundle without ever being used.
+
+Even though, throughout the article, I did mention several times you should
+avoid using classes, there are cases when they are simply better than any
+alternative I presented here, it's up to you to find those cases. Personally,
+I think they're somewhat rare since everything are functional components, plain
+objects and singleton services these days.
+
+Dependency injections, for instance, can be handled by a singleton service that
+manages every injection you have in your application like Vue's `provide`/`inject`
+API, thus not requiring you to implement an entire OOP logic to implement this
+kind of thing. The strategy pattern, which is one of the most common ways of
+implementing DI, is commonly reduced to plain callbacks.
+
+And Just like the builder, singleton and strategy patterns, every single OOP
+pattern can be implemented in JS in a bundle efficient way with API interfaces that
+uses only primitives, functions and plain objects. In modern JS, things are meant
+to be straight to the point and "on demand", which is quite the opposite of Java
+and its verbose ways.
+
+You can embrace this and keep your bundle sizes minimal and your code simpler
+but still implement useful design patterns common to OOP. All you need to do
+is stick to the pattern concept instead of trying to implement it the way it is
+in Java. With that knowledge, you can get the most out of any programming
+language out there keeping your code well structured anywhere you write it.
