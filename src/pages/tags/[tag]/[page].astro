@@ -8,10 +8,9 @@ import { getCreationTime } from '@/utils/posts';
 
 type BlogPost = CollectionEntry<"blog">;
 
-const creationTime =
-  (entry: BlogPost) => getCreationTime(entry, 'unix');
-
 export const getStaticPaths = (async ({ paginate }) => {
+  const creationTime = (entry: BlogPost) => getCreationTime(entry, 'unix');
+
   const entries = await getCollection('blog');
 
   const tags = new Set<string>(['none', 'all']);
