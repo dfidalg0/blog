@@ -12,12 +12,14 @@ interface Props {
 const { post } = Astro.props;
 ---
 
-<a href={`/posts/${post.slug}`} class="card">
+<a href={`/posts/${post.slug}`} class="card" title={post.data.title}>
   <article>
     <section class="text-[11px]">
       {getCreationTime(post, 'formatted')}
     </section>
-    <section class="text-xl font-bold">
+    <section
+      class="text-xl font-bold whitespace-nowrap text-ellipsis overflow-hidden"
+    >
       {post.data.title}
     </section>
     {
@@ -27,6 +29,7 @@ const { post } = Astro.props;
             src={post.data.cover.img}
             alt={post.data.cover.alt ?? ""}
             width={300}
+            class="max-h-[115px] object-cover object-top"
           />
         </section>
       )
